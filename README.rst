@@ -12,7 +12,7 @@ Install
 
 ::
 
-	pip install --index-url https://test.pypi.org/simple/ --no-deps scikit-optimize-adapter --upgrade
+	pip install scikit-optimize-adapter --upgrade
 
 
 Getting started

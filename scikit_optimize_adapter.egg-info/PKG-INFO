@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: scikit-optimize-adapter
-Version: 0.0b9
+Version: 0.0b1
 Summary: Dask parallelized bayesian optimization toolbox
 Home-page: UNKNOWN
 Author: Jay Kim
@@ -256,12 +256,13 @@ Description:
         Tuning multiple models with highly skewed training data sizes
         -------------------------------------------------------------
         
-        When the data size for each group is highly skewed, a suboptimal resource allocation can occur. In this case, it is more advantageous to throttle the feeding of delayed graphs to the Dask client by using a few threads. Let's again look at an example case:
+        When the data size for each group is highly skewed, a suboptimal resource allocation can occur. In this case, it is more advantageous to throttle the feeding of delayed graphs to the Dask client by using multiple thread instances. Let's again look at an example case:
         
         .. code:: python
         
         	import pandas as pd
         	import numpy as np
+        	import time
         
         	group_col = np.asarray([1]*100 + [2]*2 + [3]*2 + [4]*2 + [5]*2 + [6]*2 + [7]*2 + [8]*2 + [9]*2 + [16]*2 + [26]*2 + [17]*2 + [18]*2 + [19]*2 + [116]*2 + [126]*2).reshape(-1, 1)  # note high skewness in the data size distribution
         	data = np.arange(130*4).reshape(130, 4)
@@ -269,27 +270,37 @@ Description:
         	df = pd.DataFrame(data=data, columns=['target', 'f1', 'f2', 'f3', 'groups'])
         
         	features = ['f1', 'f2', 'f3']
+        	groupby = 'groups'
         	target = 'target'
         
         	K = 5
         
-        	class DummyEstimator():
-            
-            def fit(self, train_X, train_y, params):
-                a = len(train_X)/10.
-                
-                for i in range(int(a*5000000)):
-                    i + 1
-                
-                print(len(train_X), len(train_y))
-                
-            def score(self, validation_X, validation_y):
-                
-                print(len(validation_X), len(validation_y))
-                
-                return 1.5
+        	from adapter import BaseEstimator  # import BaseEstimator!
         
-        est = DummyEstimator() 
+        	class DummyEstimator(BaseEstimator):
+        
+        	    def __init__(self):
+        	        pass
+        
+        	    def fit(self, train_X, train_y, params):
+        	        a = len(train_X)/10.
+        
+        	        for i in range(int(a*5000000)):
+        	            i + 1
+        
+        	        print(len(train_X), len(train_y))
+        
+        	    def score(self, validation_X, validation_y):
+        
+        	        print(len(validation_X), len(validation_y))
+        
+        	        return 1.5
+        
+        	    def predict(self, test_X):
+        
+        	        return len(test_X)
+        
+        	my_estimator = DummyEstimator()
         
         	orderby=None
         	num_partition=None
@@ -308,8 +319,19 @@ Description:
         In such a case, we use ``run_with_threads`` method call, where we pass an additional argument of ``num_threads``:
         
         .. code:: python
+
+        	from adapter import Adapter
         
-        	res = adapt.run(num_initial=5, num_iter=15, search_space=space, num_threads=2)
+        	adapt = Adapter(df, features, target, K, groupby='groups',
+        	        cross_validation_scheme='random_shuffle',
+        	        search_method="bayesian_optimization",
+        	        estimator=my_estimator)  # your own estimator
+        
+        	res = adapt.run(num_initial=5, num_iter=15, search_space=space, num_threads=2)  # num_threads
+        
+        You can check fromt the Dask dashboard that only two delayed computation graphs are worked on at the same time, achieving a dynamic resource allocation in effect:
+        
+        .. figure:: https://github.com/mozjay0619/scikit-optimize-adapter/blob/master/media/twograph_dashboard.png
         
         
         Todo:
