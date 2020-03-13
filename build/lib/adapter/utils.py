@@ -1,8 +1,3 @@
-import numpy as np
-from sklearn.utils import check_random_state
-import socket
-import os
-from scipy.optimize import OptimizeResult
 # from sklearn.gaussian_process.kernels import ConstantKernel
 # from sklearn.gaussian_process.kernels import Matern
 # the sklearn kernels do not implement gradients!
@@ -11,6 +6,14 @@ from skopt.learning.gaussian_process.kernels import HammingKernel
 from skopt.learning.gaussian_process.kernels import Matern
 from skopt.learning import GaussianProcessRegressor
 from skopt.space import Space, Categorical, Integer, Real, Dimension
+from scipy.optimize import OptimizeResult
+from sklearn.utils import check_random_state
+import numpy as np
+import socket
+import os
+import threading
+import queue
+import time
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import cm
 plt.style.use('seaborn')
@@ -287,3 +290,31 @@ def plot_convergence(*args, **kwargs):
 
     ax.grid()
     return ax
+
+class MultiThreadTaskQueue(queue.Queue):
+    
+    def __init__(self, num_threads=1):
+        queue.Queue.__init__(self)
+        self.num_threads = num_threads
+        self.start_threads()
+        self.results = []
+        
+    def put_task(self, task, *args, **kwargs):
+        self.put((task, args, kwargs))
+        
+    def start_threads(self):
+        for i in range(self.num_threads):
+            t = threading.Thread(target=self.task_in_thread)
+            t.setDaemon(True)
+            t.start()
+            
+    def task_in_thread(self):
+        while True:
+            task, args, kwargs = self.get()
+            result = task(*args, **kwargs)
+            self.results.append(result)
+            self.task_done()
+
+    def get_results(self):
+        return self.results
+

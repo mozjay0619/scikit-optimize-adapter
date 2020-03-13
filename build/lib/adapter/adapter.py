@@ -6,6 +6,7 @@ from .utils import get_host_ip_address
 from .utils import get_available_port
 from .utils import create_result
 from .utils import plot_convergence
+from .utils import MultiThreadTaskQueue
 
 from dask.distributed import Client, TimeoutError, LocalCluster
 
@@ -118,12 +119,6 @@ class Adapter(object):
                                               cross_validation_scheme, orderby, 
                                               num_partition, window_size)
         
-        # consider moving these to run parameters
-        # so you can use the same object and  test diff os  these
-        # self.search_space = search_space
-        # self.num_initial = num_initial
-        # self.num_iter = num_iter
-        
     def construct_delayed_graph(self, num_iter=5, num_initial=5, search_space=None, group_key=None):
         
         if self.groupby is not None and group_key is None:
@@ -194,6 +189,26 @@ class Adapter(object):
             future = self.run_as_future(num_initial, num_iter, search_space)
             self.result = self._create_result(future.result())
             return self.result
+
+    def _threaded_task(self, *args, **kwargs):
+        
+        future = self.client.submit(*args, **kwargs)
+        return future.result()
+    
+    def run_with_threads(self, num_initial, num_iter, search_space, num_threads=2):
+        
+        taskq = MultiThreadTaskQueue(num_threads=num_threads)
+        
+        for i, group_key in enumerate(self.group_keys):
+            
+            taskq.put_task(self._threaded_task, compute_computation_graph, self.build_computation_graph, 
+                           estimator=self.estimator, cross_validator=self.cross_validator, 
+                           group_key=group_key, dimensions=search_space, 
+                           n_calls=num_iter, n_initial_points=num_initial,
+                           priority=-i)
+    
+        taskq.join()
+        return taskq.get_results()
 
     def plot_improvements(self, group_key=None):
 
