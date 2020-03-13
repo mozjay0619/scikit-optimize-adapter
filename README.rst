@@ -320,9 +320,9 @@ In such a case, we use ``run_with_threads`` method call, where we pass an additi
 	        search_method="bayesian_optimization",
 	        estimator=my_estimator)  # your own estimator
 
-	res = adapt.run(num_initial=5, num_iter=15, search_space=space, num_threads=2)  # num_threads
+	res = adapt.run_with_threads(num_initial=5, num_iter=15, search_space=space, num_threads=2)  # num_threads
 
-You can check fromt the Dask dashboard that only two delayed computation graphs are worked on at the same time, achieving a dynamic resource allocation in effect:
+You can check from the Dask dashboard that only two delayed computation graphs are worked on at the same time, achieving a dynamic resource allocation in effect:
 
 .. figure:: https://github.com/mozjay0619/scikit-optimize-adapter/blob/master/media/twograph_dashboard.png
 
