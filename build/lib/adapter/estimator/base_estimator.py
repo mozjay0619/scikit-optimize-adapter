@@ -3,11 +3,8 @@ from abc import ABCMeta, abstractmethod
 class BaseEstimator(object, metaclass=ABCMeta):
     """
     Base class for all Algorithm classes.
-
-    comment on similarity with scikit learn
     """
 
-    @abstractmethod
     def __init__(self, **kwargs):
         pass
      
