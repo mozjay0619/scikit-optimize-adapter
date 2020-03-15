@@ -46,7 +46,7 @@ def base_computation_graph(estimator, cross_validator, group_key=None,
                                                                              group_key)
             evaluation_results.append(evaluation_result)
             
-        avg_evaluation_result = dask.delayed(lambda *args: sum(args)/k)(*evaluation_results)
+        avg_evaluation_result = dask.delayed(lambda *args: sum(args)/k)(*evaluation_results)  # not python2 compatible
         optimizer = dask.delayed(stateful_object_mutator)(optimizer, "tell", x=next_x, 
                                                           y=avg_evaluation_result)
         

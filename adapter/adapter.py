@@ -31,47 +31,13 @@ class Adapter(object):
                  cross_validation_scheme="random_shuffle", 
                  search_method="bayesian_optimization", 
                  estimator="xgboost_regression"):
+
+        self.groupby = groupby
         
         # check current OS:
         if sys.platform == "darwin":
             if platform.mac_ver()[0] > "10.13.4":  # macOS version for High Sierra
                 os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
-        
-        # check dataframe input
-        if not isinstance(df, pd.DataFrame):
-            raise TypeError("Expected training data input to be a Pandas "
-                            "dataframe, but instead received: {}".format(type(df)))
-            
-        if not set(features) < set(df.columns):
-            unrecognized_cols = set(features) - set(df.columns)
-            raise ValueError("{} columns are missing from input "
-                             "dataframe".format(unrecognized_cols))
-            
-        if not target in df.columns:
-            raise ValueError("{} target column is missing from "
-                             "input dataframe".format(target))
-            
-        if groupby:
-            if not groupby in df.columns:
-                raise ValueError("{} groupby column is missing from "
-                                 "input dataframe".format(groupby))
-            else:
-                self.group_keys = df[groupby].unique()
-            
-        if orderby:
-            if not orderby in df.columns:
-                raise ValueError("{} orderby column is missing from "
-                                 "input dataframe".format(orderby))
-                
-        self.groupby = groupby
-        
-        # reorder dataframe columns
-        if not isinstance(features, list):
-            features = list(features)
-        column_order = features + [target]
-        if groupby:
-            column_order = [groupby] + column_order
-        df = df[column_order]
         
         # check/set search_method
         allowed_search_methods = ["bayesian_optimization", "random_search"]

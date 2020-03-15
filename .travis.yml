@@ -1,0 +1,7 @@
+language: python
+python:
+  # - "2.7"  # this should fail!
+  - "3.6"
+  - "3.7"
+install: bash build_tools/travis/install.sh
+script: pytest

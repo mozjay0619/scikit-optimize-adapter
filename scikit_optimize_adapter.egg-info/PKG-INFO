@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: scikit-optimize-adapter
-Version: 0.0b1
+Version: 0.0b12
 Summary: Dask parallelized bayesian optimization toolbox
 Home-page: UNKNOWN
 Author: Jay Kim
@@ -19,7 +19,7 @@ Description:
         
         ::
         
-        	pip install --index-url https://test.pypi.org/simple/ --no-deps scikit-optimize-adapter --upgrade
+        	pip install scikit-optimize-adapter --upgrade
         
         
         Getting started

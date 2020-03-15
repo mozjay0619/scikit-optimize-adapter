@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import tempfile
 import os
 import logging
@@ -13,6 +14,40 @@ class CrossValidator(object):
     def __init__(self, df, features, target, K, groupby=None, 
                  cross_validation_scheme='random_shuffle', 
                  orderby=None, num_partition=None, window_size=None):
+
+        # check dataframe input
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError("Expected training data input to be a Pandas "
+                            "dataframe, but instead received: {}".format(type(df)))
+            
+        if not set(features) < set(df.columns):
+            unrecognized_cols = set(features) - set(df.columns)
+            raise ValueError("{} columns are missing from input "
+                             "dataframe".format(unrecognized_cols))
+            
+        if not target in df.columns:
+            raise ValueError("{} target column is missing from "
+                             "input dataframe".format(target))
+            
+        if groupby:
+            if not groupby in df.columns:
+                raise ValueError("{} groupby column is missing from "
+                                 "input dataframe".format(groupby))
+            else:
+                self.group_keys = df[groupby].unique()
+            
+        if orderby:
+            if not orderby in df.columns:
+                raise ValueError("{} orderby column is missing from "
+                                 "input dataframe".format(orderby))
+
+        # reorder dataframe columns
+        if not isinstance(features, list):
+            features = list(features)
+        column_order = features + [target]
+        if groupby:
+            column_order = [groupby] + column_order
+        df = df[column_order]
         
         self.groupby = groupby
 
@@ -49,12 +84,13 @@ class CrossValidator(object):
             if len(unique_values) != 2:
                 raise ValueError("Expected target values to be in [0.0, 1.0], instead "
                                  "found {}".format(unique_values))
-            if not np.allclose(np.array([0.0, 1.0]), unique_values):
+            if not (np.allclose(np.array([0.0, 1.0]), unique_values) or 
+                    np.allclose(np.array([1.0, 0.0]), unique_values)):
                 raise ValueError("Expected target values to be in [0.0, 1.0], instead "
                                  "found {}".format(unique_values))
                 
             self._cross_validation_scheme = self._binary_classification_scheme
-            scheme_kwargs = {"target": target}
+            scheme_kwargs = {"target": target, "K": K}
         
         elif self.cross_validation_scheme == "stratified_sampling":
             
@@ -76,6 +112,7 @@ class CrossValidator(object):
     def _random_shuffle_scheme(self, df, random_state=None, **kwargs):
 
         data = df.to_numpy()
+        np.random.shuffle(data)
         return data
     
     def _ordered_scheme(self, df, random_state=None, **kwargs):
@@ -88,6 +125,7 @@ class CrossValidator(object):
         
     def _binary_classification_scheme(self, df, random_state=None, **kwargs):
         
+        K = kwargs["K"]
         target = kwargs["target"]
         target_array = df[target].values
 

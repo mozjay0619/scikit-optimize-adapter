@@ -1,5 +1,5 @@
 
-__version__ = "0.0.b1"
+__version__ = "0.0.b13"
 
 
 from .adapter import Adapter
