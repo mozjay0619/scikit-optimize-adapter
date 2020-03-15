@@ -19,7 +19,7 @@ Description:
         
         ::
         
-        	pip install --index-url https://test.pypi.org/simple/ --no-deps scikit-optimize-adapter --upgrade
+        	pip install scikit-optimize-adapter --upgrade
         
         
         Getting started
@@ -264,7 +264,7 @@ Description:
         	import numpy as np
         	import time
         
-        	group_col = np.asarray([1]*100 + [2]*2 + [3]*2 + [4]*2 + [5]*2 + [6]*2 + [7]*2 + [8]*2 + [9]*2 + [16]*2 + [26]*2 + [17]*2 + [18]*2 + [19]*2 + [116]*2 + [126]*2).reshape(-1, 1)  # note high skewness in the data size distribution
+        	group_col = np.asarray([1]*100 + [2]*2 + [3]*2 + [4]*2 + [5]*2 + [6]*2 + [7]*2 + [8]*2 + [9]*2 + [16]*2 + [26]*2 + [17]*2 + [18]*2 + [19]*2 + [116]*2 + [126]*2).reshape(-1, 1)
         	data = np.arange(130*4).reshape(130, 4)
         	data = np.hstack((data, group_col))
         	df = pd.DataFrame(data=data, columns=['target', 'f1', 'f2', 'f3', 'groups'])
@@ -319,7 +319,7 @@ Description:
         In such a case, we use ``run_with_threads`` method call, where we pass an additional argument of ``num_threads``:
         
         .. code:: python
-
+        
         	from adapter import Adapter
         
         	adapt = Adapter(df, features, target, K, groupby='groups',
@@ -327,11 +327,12 @@ Description:
         	        search_method="bayesian_optimization",
         	        estimator=my_estimator)  # your own estimator
         
-        	res = adapt.run(num_initial=5, num_iter=15, search_space=space, num_threads=2)  # num_threads
+        	res = adapt.run_with_threads(num_initial=5, num_iter=15, search_space=space, num_threads=2)  # num_threads
         
-        You can check fromt the Dask dashboard that only two delayed computation graphs are worked on at the same time, achieving a dynamic resource allocation in effect:
+        You can check from the Dask dashboard that only two delayed computation graphs are worked on at the same time, achieving a dynamic resource allocation in effect:
         
         .. figure:: https://github.com/mozjay0619/scikit-optimize-adapter/blob/master/media/twograph_dashboard.png
+        
         
         
         Todo:
